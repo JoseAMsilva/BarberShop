@@ -1,4 +1,4 @@
-# 💈 Barbearia RESTful API
+# Barbearia API
 
 Uma API moderna, escalável e segura desenvolvida em **Node.js** para gestão completa de barbearias. A arquitetura segue os melhores padrões da indústria, separando as camadas de roteamento, regras de negócio e persistência de dados.
 
