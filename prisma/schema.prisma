@@ -1,0 +1,343 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model agendamento_servicos {
+  id             Int          @id @default(autoincrement()) @db.UnsignedInt
+  agendamento_id String       @db.Char(36)
+  servico_id     String       @db.Char(36)
+  preco_cobrado  Decimal      @db.Decimal(10, 2)
+  agendamentos   agendamentos @relation(fields: [agendamento_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_as_agendamento")
+  servicos       servicos     @relation(fields: [servico_id], references: [id], onUpdate: NoAction, map: "fk_as_servico")
+
+  @@unique([agendamento_id, servico_id], map: "uk_agendamento_servico")
+  @@index([servico_id], map: "idx_as_servico")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model agendamentos {
+  id                   String                 @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  cliente_id           String                 @db.Char(36)
+  barbeiro_id          String                 @db.Char(36)
+  data_hora_inicio     DateTime               @db.DateTime(0)
+  data_hora_fim        DateTime               @db.DateTime(0)
+  status               agendamentos_status    @default(agendado)
+  observacoes          String?                @db.Text
+  criado_em            DateTime               @default(now()) @db.Timestamp(0)
+  atualizado_em        DateTime               @default(now()) @db.Timestamp(0)
+  agendamento_servicos agendamento_servicos[]
+  barbeiros            barbeiros              @relation(fields: [barbeiro_id], references: [id], onUpdate: NoAction, map: "fk_agendamentos_barbeiro")
+  clientes             clientes               @relation(fields: [cliente_id], references: [id], onUpdate: NoAction, map: "fk_agendamentos_cliente")
+  avaliacoes           avaliacoes?
+  transacoes           transacoes[]
+
+  @@index([barbeiro_id, data_hora_inicio], map: "idx_agendamentos_barbeiro_data")
+  @@index([cliente_id], map: "idx_agendamentos_cliente")
+  @@index([data_hora_inicio], map: "idx_agendamentos_data")
+  @@index([status], map: "idx_agendamentos_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model avaliacoes {
+  id             String       @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  agendamento_id String       @unique(map: "uk_avaliacoes_agendamento") @db.Char(36)
+  cliente_id     String       @db.Char(36)
+  barbeiro_id    String       @db.Char(36)
+  nota           Int          @db.UnsignedTinyInt
+  comentario     String?      @db.Text
+  criado_em      DateTime     @default(now()) @db.Timestamp(0)
+  agendamentos   agendamentos @relation(fields: [agendamento_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_avaliacoes_agendamento")
+  barbeiros      barbeiros    @relation(fields: [barbeiro_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_avaliacoes_barbeiro")
+  clientes       clientes     @relation(fields: [cliente_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_avaliacoes_cliente")
+
+  @@index([barbeiro_id], map: "idx_avaliacoes_barbeiro")
+  @@index([cliente_id], map: "idx_avaliacoes_cliente")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model barbeiro_especialidades {
+  barbeiro_id      String         @db.Char(36)
+  especialidade_id Int            @db.UnsignedInt
+  criado_em        DateTime       @default(now()) @db.Timestamp(0)
+  barbeiros        barbeiros      @relation(fields: [barbeiro_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_be_barbeiro")
+  especialidades   especialidades @relation(fields: [especialidade_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_be_especialidade")
+
+  @@id([barbeiro_id, especialidade_id])
+  @@index([especialidade_id], map: "fk_be_especialidade")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model barbeiros {
+  id                      String                    @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  nome                    String                    @db.VarChar(150)
+  telefone                String                    @unique(map: "uk_barbeiros_telefone") @db.VarChar(20)
+  email                   String?                   @unique(map: "uk_barbeiros_email") @db.VarChar(255)
+  senha                   String?                   @db.VarChar(255)
+  foto_url                String?                   @db.VarChar(500)
+  data_contratacao        DateTime                  @db.Date
+  percentual_comissao     Decimal                   @default(50.00) @db.Decimal(5, 2)
+  biografia               String?                   @db.Text
+  ativo                   Boolean                   @default(true)
+  criado_em               DateTime                  @default(now()) @db.Timestamp(0)
+  atualizado_em           DateTime                  @default(now()) @db.Timestamp(0)
+  agendamentos            agendamentos[]
+  avaliacoes              avaliacoes[]
+  barbeiro_especialidades barbeiro_especialidades[]
+  comissoes               comissoes[]
+  galeria_cortes          galeria_cortes[]
+  horarios_funcionamento  horarios_funcionamento[]
+
+  @@index([ativo], map: "idx_barbeiros_ativo")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model caixa {
+  id               String       @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  data_abertura    DateTime     @default(now()) @db.DateTime(0)
+  data_fechamento  DateTime?    @db.DateTime(0)
+  valor_abertura   Decimal      @default(0.00) @db.Decimal(10, 2)
+  valor_fechamento Decimal?     @db.Decimal(10, 2)
+  status           caixa_status @default(aberto)
+  observacoes      String?      @db.Text
+  criado_em        DateTime     @default(now()) @db.Timestamp(0)
+  atualizado_em    DateTime     @default(now()) @db.Timestamp(0)
+  transacoes       transacoes[]
+
+  @@index([data_abertura], map: "idx_caixa_data")
+  @@index([status], map: "idx_caixa_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model categorias_produtos {
+  id        Int        @id @default(autoincrement()) @db.UnsignedInt
+  nome      String     @unique(map: "uk_categorias_nome") @db.VarChar(100)
+  descricao String?    @db.VarChar(255)
+  criado_em DateTime   @default(now()) @db.Timestamp(0)
+  produtos  produtos[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model clientes {
+  id              String           @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  nome            String           @db.VarChar(150)
+  telefone        String           @unique(map: "uk_clientes_telefone") @db.VarChar(20)
+  email           String?          @unique(map: "uk_clientes_email") @db.VarChar(255)
+  senha           String?          @db.VarChar(255)
+  data_nascimento DateTime?        @db.Date
+  genero          clientes_genero  @default(nao_informado)
+  endereco        String?          @db.VarChar(255)
+  cidade          String?          @db.VarChar(100)
+  estado          String?          @db.Char(2)
+  cep             String?          @db.VarChar(10)
+  notas           String?          @db.Text
+  ativo           Boolean          @default(true)
+  criado_em       DateTime         @default(now()) @db.Timestamp(0)
+  atualizado_em   DateTime         @default(now()) @db.Timestamp(0)
+  agendamentos    agendamentos[]
+  avaliacoes      avaliacoes[]
+  galeria_cortes  galeria_cortes[]
+
+  @@index([ativo], map: "idx_clientes_ativo")
+  @@index([nome], map: "idx_clientes_nome")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model comissoes {
+  id             String     @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  barbeiro_id    String     @db.Char(36)
+  transacao_id   String     @db.Char(36)
+  valor_servico  Decimal    @db.Decimal(10, 2)
+  percentual     Decimal    @db.Decimal(5, 2)
+  valor_comissao Decimal    @db.Decimal(10, 2)
+  pago           Boolean    @default(false)
+  data_pagamento DateTime?  @db.DateTime(0)
+  criado_em      DateTime   @default(now()) @db.Timestamp(0)
+  barbeiros      barbeiros  @relation(fields: [barbeiro_id], references: [id], onUpdate: NoAction, map: "fk_comissoes_barbeiro")
+  transacoes     transacoes @relation(fields: [transacao_id], references: [id], onUpdate: NoAction, map: "fk_comissoes_transacao")
+
+  @@index([transacao_id], map: "fk_comissoes_transacao")
+  @@index([barbeiro_id], map: "idx_comissoes_barbeiro")
+  @@index([criado_em], map: "idx_comissoes_data")
+  @@index([pago], map: "idx_comissoes_pago")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model configuracoes {
+  chave         String   @id @db.VarChar(100)
+  valor         String   @db.Text
+  descricao     String?  @db.VarChar(255)
+  atualizado_em DateTime @default(now()) @db.Timestamp(0)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model especialidades {
+  id                      Int                       @id @default(autoincrement()) @db.UnsignedInt
+  nome                    String                    @unique(map: "uk_especialidades_nome") @db.VarChar(100)
+  descricao               String?                   @db.VarChar(255)
+  criado_em               DateTime                  @default(now()) @db.Timestamp(0)
+  barbeiro_especialidades barbeiro_especialidades[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model galeria_cortes {
+  id          String    @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  barbeiro_id String    @db.Char(36)
+  cliente_id  String?   @db.Char(36)
+  imagem_url  String    @db.VarChar(500)
+  titulo      String?   @db.VarChar(150)
+  descricao   String?   @db.Text
+  criado_em   DateTime  @default(now()) @db.Timestamp(0)
+  barbeiros   barbeiros @relation(fields: [barbeiro_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_galeria_barbeiro")
+  clientes    clientes? @relation(fields: [cliente_id], references: [id], onUpdate: NoAction, map: "fk_galeria_cliente")
+
+  @@index([cliente_id], map: "fk_galeria_cliente")
+  @@index([barbeiro_id], map: "idx_galeria_barbeiro")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model horarios_funcionamento {
+  id            Int       @id @default(autoincrement()) @db.UnsignedInt
+  barbeiro_id   String    @db.Char(36)
+  dia_semana    Int       @db.UnsignedTinyInt
+  hora_inicio   DateTime  @db.Time(0)
+  hora_fim      DateTime  @db.Time(0)
+  ativo         Boolean   @default(true)
+  criado_em     DateTime  @default(now()) @db.Timestamp(0)
+  atualizado_em DateTime  @default(now()) @db.Timestamp(0)
+  barbeiros     barbeiros @relation(fields: [barbeiro_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_horarios_barbeiro")
+
+  @@unique([barbeiro_id, dia_semana], map: "uk_horarios_barbeiro_dia")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model movimentacoes_estoque {
+  id         String                     @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  produto_id String                     @db.Char(36)
+  tipo       movimentacoes_estoque_tipo
+  quantidade Int
+  motivo     String?                    @db.VarChar(255)
+  criado_em  DateTime                   @default(now()) @db.Timestamp(0)
+  produtos   produtos                   @relation(fields: [produto_id], references: [id], onUpdate: NoAction, map: "fk_mov_produto")
+
+  @@index([criado_em], map: "idx_mov_data")
+  @@index([produto_id], map: "idx_mov_produto")
+  @@index([tipo], map: "idx_mov_tipo")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model produtos {
+  id                    String                  @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  categoria_id          Int?                    @db.UnsignedInt
+  nome                  String                  @db.VarChar(200)
+  descricao             String?                 @db.Text
+  preco_custo           Decimal                 @default(0.00) @db.Decimal(10, 2)
+  preco_venda           Decimal                 @db.Decimal(10, 2)
+  quantidade_estoque    Int                     @default(0)
+  estoque_minimo        Int                     @default(5)
+  ativo                 Boolean                 @default(true)
+  criado_em             DateTime                @default(now()) @db.Timestamp(0)
+  atualizado_em         DateTime                @default(now()) @db.Timestamp(0)
+  movimentacoes_estoque movimentacoes_estoque[]
+  categorias_produtos   categorias_produtos?    @relation(fields: [categoria_id], references: [id], onUpdate: NoAction, map: "fk_produtos_categoria")
+  transacoes            transacoes[]
+
+  @@index([ativo], map: "idx_produtos_ativo")
+  @@index([categoria_id], map: "idx_produtos_categoria")
+  @@index([quantidade_estoque, estoque_minimo], map: "idx_produtos_estoque")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model servicos {
+  id                   String                 @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  nome                 String                 @db.VarChar(150)
+  descricao            String?                @db.Text
+  preco                Decimal                @db.Decimal(10, 2)
+  duracao_minutos      Int                    @db.UnsignedInt
+  ativo                Boolean                @default(true)
+  criado_em            DateTime               @default(now()) @db.Timestamp(0)
+  atualizado_em        DateTime               @default(now()) @db.Timestamp(0)
+  agendamento_servicos agendamento_servicos[]
+
+  @@index([ativo], map: "idx_servicos_ativo")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model transacoes {
+  id              String                     @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  caixa_id        String                     @db.Char(36)
+  agendamento_id  String?                    @db.Char(36)
+  produto_id      String?                    @db.Char(36)
+  tipo            transacoes_tipo
+  valor           Decimal                    @db.Decimal(10, 2)
+  forma_pagamento transacoes_forma_pagamento
+  descricao       String?                    @db.VarChar(255)
+  criado_em       DateTime                   @default(now()) @db.Timestamp(0)
+  comissoes       comissoes[]
+  agendamentos    agendamentos?              @relation(fields: [agendamento_id], references: [id], onUpdate: NoAction, map: "fk_transacoes_agendamento")
+  caixa           caixa                      @relation(fields: [caixa_id], references: [id], onUpdate: NoAction, map: "fk_transacoes_caixa")
+  produtos        produtos?                  @relation(fields: [produto_id], references: [id], onUpdate: NoAction, map: "fk_transacoes_produto")
+
+  @@index([produto_id], map: "fk_transacoes_produto")
+  @@index([agendamento_id], map: "idx_transacoes_agendamento")
+  @@index([caixa_id], map: "idx_transacoes_caixa")
+  @@index([criado_em], map: "idx_transacoes_data")
+  @@index([tipo], map: "idx_transacoes_tipo")
+}
+
+enum movimentacoes_estoque_tipo {
+  entrada
+  saida
+  ajuste
+}
+
+enum transacoes_tipo {
+  servico
+  venda_produto
+  despesa
+  sangria
+  suprimento
+}
+
+enum agendamentos_status {
+  agendado
+  confirmado
+  em_atendimento
+  concluido
+  cancelado
+  nao_compareceu
+}
+
+enum caixa_status {
+  aberto
+  fechado
+}
+
+enum clientes_genero {
+  masculino
+  feminino
+  outro
+  nao_informado
+}
+
+enum transacoes_forma_pagamento {
+  dinheiro
+  pix
+  credito
+  debito
+}

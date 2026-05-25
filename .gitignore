@@ -1,0 +1,34 @@
+# Dependências
+node_modules/
+
+# Banco de dados
+database/
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.production
+
+# Dados do MySQL (volume Docker)
+mysql_data/
+
+# Build
+dist/
+
+# Cobertura de testes
+coverage/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+/src/generated/prisma
